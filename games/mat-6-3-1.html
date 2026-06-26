@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MAT 6.3.1 - Açı Casusları</title>
+  
+  <!-- Tailwind CSS & Fonts (Works online with fallback to inline styling offline) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;750;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #020617;
+      color: #f1f5f9;
+      user-select: none;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #020617;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+
+    /* Robust Offline CSS Fallbacks for layouts if Tailwind fails to load offline */
+    .offline-grid-hud {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    @media (max-width: 640px) {
+      .offline-grid-hud {
+        grid-template-columns: 1fr;
+      }
+    }
+    .offline-card {
+      background-color: rgb(15 23 42 / 0.4);
+      border: 1px solid rgb(30 41 59);
+      border-radius: 12px;
+      padding: 12px;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden p-0 m-0">
+
+  <div id="app" class="max-w-7xl mx-auto px-4 md:px-6 py-4 flex-1 flex flex-col justify-between">
+    <!-- Dynamic Content Rendered Here -->
+  </div>
+
+  <script>
+    // ----------------- APP STATE ENGINE -----------------
+    const state = {
+      view: 'missions', // 'missions' or 'lab'
+      stats: {
+        score: 0,
+        energyCrystals: 0,
+        rank: "Çaylak Casus",
+        completedMissions: 0,
+        unlockedLevels: [1]
+      },
+      activeMissionId: null,
+      focusedAngleId: 1,
+      transversalAngle: 65,
+      lineDistance: 130,
+      selectedAngleId: null,
+      highlightedAngleIds: [],
+      correctPairIds: [],
+      foundPairsList: [],
+      m4Index: 0,
+      m5Index: 0,
+      m6StepIdx: 0,
+      feedback: { status: 'idle', text: '' },
+      hintOpen: false,
+      notifications: []
+    };
+
+    // ----------------- SOUND SYSTEM (Web Audio Synthesizer) -----------------
+    const audioContextRef = { current: null };
+    function getAudioContext() {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      return audioContextRef.current;
+    }
+
+    const playSound = {
+      clickAngle: () => {
+        try {
+          const ctx = getAudioContext();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(580, ctx.currentTime);
+          gain.gain.setValueAtTime(0.08, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.12);
+        } catch(e) {}
+      },
+      clickButton: () => {
+        try {
+          const ctx = getAudioContext();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(420, ctx.currentTime);
+          gain.gain.setValueAtTime(0.1, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.1);
+        } catch(e) {}
+      },
+      success: () => {
+        try {
+          const ctx = getAudioContext();
+          const now = ctx.currentTime;
+          
+          const osc1 = ctx.createOscillator();
+          const gain1 = ctx.createGain();
+          osc1.connect(gain1); gain1.connect(ctx.destination);
+          osc1.frequency.setValueAtTime(523.25, now);
+          gain1.gain.setValueAtTime(0.08, now);
+          gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+          osc1.start(); osc1.stop(now + 0.15);
+
+          setTimeout(() => {
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.connect(gain2); gain2.connect(ctx.destination);
+            osc2.frequency.setValueAtTime(659.25, ctx.currentTime);
+            gain2.gain.setValueAtTime(0.08, ctx.currentTime);
+            gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+            osc2.start(); osc2.stop(ctx.currentTime + 0.15);
+          }, 100);
+
+          setTimeout(() => {
+            const osc3 = ctx.createOscillator();
+            const gain3 = ctx.createGain();
+            osc3.connect(gain3); gain3.connect(ctx.destination);
+            osc3.frequency.setValueAtTime(783.99, ctx.currentTime);
+            gain3.gain.setValueAtTime(0.12, ctx.currentTime);
+            gain3.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+            osc3.start(); osc3.stop(ctx.currentTime + 0.3);
+          }, 200);
+        } catch(e) {}
+      },
+      error: () => {
+        try {
+          const ctx = getAudioContext();
+          const now = ctx.currentTime;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(150, now);
+          osc.frequency.linearRampToValueAtTime(80, now + 0.28);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+          osc.start();
+          osc.stop(now + 0.3);
+        } catch(e) {}
+      },
+      rankUnlock: () => {
+        try {
+          const ctx = getAudioContext();
+          const now = ctx.currentTime;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.5);
+          gain.gain.setValueAtTime(0.1, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+          osc.start();
+          osc.stop(now + 0.6);
+        } catch(e) {}
+      }
+    };
+
+    // ----------------- GEOMETRICAL HELPERS -----------------
+    function getCorrespondingId(id) {
+      if (id <= 4) return id + 4;
+      return id - 4;
+    }
+    function getAlternateInteriorId(id) {
+      const mapping = { 3: 6, 4: 5, 5: 4, 6: 3 };
+      return mapping[id] || null;
+    }
+    function getAlternateExteriorId(id) {
+      const mapping = { 1: 8, 2: 7, 7: 2, 8: 1 };
+      return mapping[id] || null;
+    }
+    function getVerticalId(id) {
+      const mapping = { 1: 4, 2: 3, 3: 2, 4: 1, 5: 8, 6: 7, 7: 6, 8: 5 };
+      return mapping[id];
+    }
+    function getSupplementaryIds(id) {
+      const mapping = {
+        1: [2, 3], 2: [1, 4], 3: [1, 4], 4: [2, 3],
+        5: [6, 7], 6: [5, 8], 7: [5, 8], 8: [6, 7]
+      };
+      return mapping[id];
+    }
+
+    // Notification Queue
+    function addNotification(title, desc) {
+      const id = Date.now();
+      state.notifications.push({ id, title, desc });
+      playSound.rankUnlock();
+      renderNotifications();
+      setTimeout(() => {
+        state.notifications = state.notifications.filter(n => n.id !== id);
+        renderNotifications();
+      }, 5000);
+    }
+
+    // ----------------- DATA DEFINITIONS -----------------
+    const missionsData = [
+      { id: 1, title: 'Görev 1: Paralel Geçitler (Yöndeş)', codename: 'SEKTÖR Y-9', objectiveText: '3 yöndeş çift bul', description: 'İki paralel doğrunun kesenle yaptığı açılardan aynı yöne bakan (yöndeş) açı çift falan sistemleri uyuşturun.', scoreReward: 200 },
+      { id: 2, title: 'Görev 2: Çapraz Koridor (İç Ters)', codename: 'KORİDOR I-1', objectiveText: '2 iç ters çift yerleştir', description: 'Hatların içinde kalan ve kesilme kesitlerine zıt taraflara bakan siber bağlantıları eşleştirin.', scoreReward: 250 },
+      { id: 3, title: 'Görev 3: Siber Frekans (Dış Ters)', codename: 'FREKANS D-3', objectiveText: '2 dış ters çift bağla', description: 'Kalkan şebekesindeki dış ters siber frekans bağlantı bölgelerini bulun.', scoreReward: 300 },
+      { id: 4, title: 'Görev 4: Siber Tasnif (Yön Değerlendirme)', codename: 'TASNİF T-5', objectiveText: '6/6 tasnif tamamla', description: 'Ekrandaki açı verilerinin hangi kategorilere uyumlu olduğunu sınıflayın.', scoreReward: 350 },
+      { id: 5, title: 'Görev 5: Denklemler Şebekesi (Cebir)', codename: 'CEBİR C-8', objectiveText: 'Tüm soruları tamamla', description: 'Eşitlik teorisini kullanarak verilen cebirsel siber kilitleri çözün.', scoreReward: 400 },
+      { id: 6, title: 'Görev 6: Siber Kilit (Karışık Sınav)', codename: 'KİLİT K-9', objectiveText: 'Hızlı hacker sınavı', description: 'Bütün teorik hacker eğitimlerini tamamlamak için siber kilit şebekelerini hızla infilak edin.', scoreReward: 500 }
+    ];
+
+    const m4Pairs = [
+      { p: [1, 5], ans: 'yondes', text: 'Açı 1 ve Açı 5 (İkisi de sol-üst)' },
+      { p: [3, 6], ans: 'ic_ters', text: 'Açı 3 ve Açı 6 (İç bölgede ve zıt taraflarında)' },
+      { p: [2, 7], ans: 'dis_ters', text: 'Açı 2 ve Açı 7 (Dış bölgede ve zıt taraflarında)' },
+      { p: [4, 8], ans: 'yondes', text: 'Açı 4 ve Açı 8 (İkisi de sağ-alt)' }
+    ];
+
+    const m5Problems = [
+      { q: "Açı 2 = 3x - 10° ve Açı 6 = 2x + 15° ise x kaç derecedir? (Not: Açı 2 ve Açı 6 yöndeştir)", ans: 25, options: [15, 25, 40, 115] },
+      { q: "Açı 3 = 110° ise iç tersi olan Açı 6 kaç derecedir?", ans: 110, options: [70, 90, 110, 180] },
+      { q: "Açı 1 = 125° ise bütünleri olan Açı 2 kaç derecedir?", ans: 55, options: [45, 55, 125, 180] }
+    ];
+
+    const m6Steps = [
+      { instruction: 'Açı 1 ile yöndeş olan açıyı seçin', first: 1, second: 5 },
+      { instruction: 'Açı 4 ile iç ters olan açıyı seçin', first: 4, second: 5 }
+    ];
+
+    // ----------------- RENDER ENGINE -----------------
+
+    // Wedge calculation helper
+    function renderWedge(cx, cy, a1, a2, r = 24) {
+      const rad1 = (a1 * Math.PI) / 180;
+      const rad2 = (a2 * Math.PI) / 180;
+      const xs = cx + r * Math.cos(rad1);
+      const ys = cy + r * Math.sin(rad1);
+      const xe = cx + r * Math.cos(rad2);
+      const ye = cy + r * Math.sin(rad2);
+      const diff = Math.abs(a2 - a1);
+      const sweepFlag = 1;
+      const largeArcFlag = diff > 180 ? 1 : 0;
+      return "M " + cx + " " + cy + " L " + xs + " " + ys + " A " + r + " " + r + " 0 " + largeArcFlag + " " + sweepFlag + " " + xe + " " + ye + " Z";
+    }
+
+    // Main SVG generator
+    function getAnglesBoardHtml(transversalAngle, lineDistance = 130, selectedAngleId = null, highlightedAngleIds = [], correctPairIds = [], isLabMode = false) {
+      const boardWidth = 540;
+      const boardHeight = 385;
+      const y1 = 120;
+      const y2 = y1 + lineDistance;
+      const rad = (transversalAngle * Math.PI) / 180;
+      const cx = boardWidth / 2;
+      const cy = (y1 + y2) / 2;
+      const xAtY = (y) => cx + (y - cy) / Math.tan(rad);
+      const x1 = xAtY(y1);
+      const x2 = xAtY(y2);
+
+      const phi = transversalAngle;
+      const definitions = [
+        { idOffset: 0, cx: x1, cy: y1 },
+        { idOffset: 4, cx: x2, cy: y2 },
+      ];
+
+      const sectors = [];
+      definitions.forEach(({ idOffset, cx, cy }) => {
+        sectors.push(
+          { id: idOffset + 1, cx, cy, a1: 180, a2: 180 + phi, mid: 180 + phi / 2, value: phi },
+          { id: idOffset + 2, cx, cy, a1: 180 + phi, a2: 360, mid: (180 + phi + 360) / 2, value: 180 - phi },
+          { id: idOffset + 3, cx, cy, a1: phi, a2: 180, mid: (phi + 180) / 2, value: 180 - phi },
+          { id: idOffset + 4, cx, cy, a1: 0, a2: phi, mid: phi / 2, value: phi }
+        );
+      });
+
+      let sectorsHtml = '';
+      sectors.forEach(sector => {
+        const isSelected = selectedAngleId === sector.id;
+        const isHighlighted = highlightedAngleIds.includes(sector.id);
+        const isCorrected = correctPairIds.includes(sector.id);
+
+        let strokeCol = 'transparent';
+        let fillCol = 'rgba(30, 41, 59, 0.4)';
+
+        if (isSelected) {
+          strokeCol = '#22d3ee';
+          fillCol = 'rgba(6, 182, 212, 0.28)';
+        } else if (isCorrected) {
+          strokeCol = '#10b981';
+          fillCol = 'rgba(16, 185, 129, 0.3)';
+        } else if (isHighlighted) {
+          strokeCol = '#f43f5e';
+          fillCol = 'rgba(244, 63, 94, 0.25)';
+        }
+
+        const textDist = 41;
+        const labelRad = (sector.mid * Math.PI) / 180;
+        const textX = sector.cx + textDist * Math.cos(labelRad);
+        const textY = sector.cy + textDist * Math.sin(labelRad) + 3.5;
+
+        sectorsHtml += `
+          <g class="cursor-pointer" onclick="handleWedgeClick(${sector.id})">
+            <!-- Wedge Shape -->
+            <path
+              d="${renderWedge(sector.cx, sector.cy, sector.a1, sector.a2, 30)}"
+              fill="${fillCol}"
+              stroke="${strokeCol}"
+              stroke-width="1.5"
+              class="transition-all duration-200 hover:fill-cyan-500/10"
+            />
+            
+            <!-- Interactive Wedge Outer Border ring -->
+            <path
+              d="${renderWedge(sector.cx, sector.cy, sector.a1, sector.a2, 30.5)}"
+              fill="none"
+              stroke="${strokeCol}"
+              stroke-width="1"
+              opacity="0.5"
+            />
+
+            <!-- Display Label and Value -->
+            <rect
+              x="${textX - 16}"
+              y="${textY - 9.5}"
+              width="32"
+              height="19"
+              rx="5"
+              fill="#030712"
+              stroke="${isSelected ? '#22d3ee' : isCorrected ? '#10b981' : isHighlighted ? '#f43f5e' : '#1e293b'}"
+              stroke-width="1.2"
+              class="opacity-90"
+            />
+            <text
+              x="${textX}"
+              y="${textY}"
+              fill="${isSelected ? '#22d3ee' : isCorrected ? '#34d399' : isHighlighted ? '#f87171' : '#cbd5e1'}"
+              font-size="9"
+              font-weight="extrabold"
+              font-family="JetBrains Mono"
+              text-anchor="middle"
+              class="select-none"
+            >
+              ${sector.id}
+            </text>
+          </g>
+        `;
+      });
+
+      return `
+        <div class="relative w-full max-w-[540px] aspect-[540/385] rounded-2xl border border-slate-800 bg-slate-950/70 p-1 shadow-2xl overflow-hidden backdrop-blur-md">
+          <svg viewBox="0 0 540 385" class="w-full h-full select-none">
+            
+            <!-- Visual grid background -->
+            <defs>
+              <pattern id="grid-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#1e293b" stroke-width="0.5" stroke-opacity="0.4" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid-pattern)" />
+
+            <!-- Grid guidelines -->
+            <line x1="0" y1="${y1}" x2="540" y2="${y1}" stroke="#334155" stroke-width="1" stroke-dasharray="3 3" />
+            <line x1="0" y1="${y2}" x2="540" y2="${y2}" stroke="#334155" stroke-width="1" stroke-dasharray="3 3" />
+
+            <!-- PARALEL DOĞRULAR d1 ve d2 -->
+            <g opacity="0.95">
+              <line x1="15" y1="${y1}" x2="525" y2="${y1}" stroke="#06b6d5" stroke-width="4.5" stroke-linecap="round" class="drop-shadow-[0_0_8px_#06b6d5]" />
+              <line x1="15" y1="${y2}" x2="525" y2="${y2}" stroke="#3b82f6" stroke-width="4.5" stroke-linecap="round" class="drop-shadow-[0_0_8px_#3b82f6]" />
+            </g>
+
+            <!-- KESEN DOĞRU d3 -->
+            <g opacity="0.95">
+              <line
+                x1="${xAtY(-30)}"
+                y1="-30"
+                x2="${xAtY(415)}"
+                y2="415"
+                stroke="#ec4899"
+                stroke-width="4"
+                stroke-linecap="round"
+                class="drop-shadow-[0_0_10px_#ec4899]"
+              />
+            </g>
+
+            <!-- Intersection Nodes (Points d1 and d2) -->
+            <circle cx="${x1}" cy="${y1}" r="6.5" fill="#f43f5e" class="animate-pulse" />
+            <circle cx="${x2}" cy="${y2}" r="6.5" fill="#10b981" class="animate-pulse" />
+
+            <!-- ANGLES SECTORS GRAPHICS AND INTERACTION -->
+            ${sectorsHtml}
+          </svg>
+        </div>
+        
+        <div class="flex items-center gap-6 mt-3 px-4 py-2 border border-slate-900 bg-slate-950/40 rounded-xl text-[10px] font-mono text-slate-400">
+          <span class="flex items-center gap-1"><span class="w-2.5 h-1.5 bg-[#06b6d5] inline-block rounded-sm"></span> d1 paralel hattı</span>
+          <span class="flex items-center gap-1"><span class="w-2.5 h-1.5 bg-[#3b82f6] inline-block rounded-sm"></span> d2 paralel hattı</span>
+          <span class="flex items-center gap-1"><span class="w-2.5 h-1 bg-[#ec4899] inline-block rounded-sm"></span> d3 kesen hattı</span>
+        </div>
+      `;
+    }
+
+    // ----------------- USER CLICK & GEOMETRY GAME LOGIC -----------------
+    window.handleWedgeClick = function(id) {
+      playSound.clickAngle();
+      
+      if (state.view === 'lab') {
+        state.focusedAngleId = id;
+        renderRelationsPanel();
+        
+        // Redraw SVG inside lab panel with highlighting
+        const activeYondes = getCorrespondingId(id);
+        const activeIcTers = getAlternateInteriorId(id);
+        const activeDisTers = getAlternateExteriorId(id);
+        const activeTers = getVerticalId(id);
+        const highlighted = [activeYondes, activeIcTers, activeDisTers, activeTers].filter(Boolean);
+
+        document.getElementById('board-container').innerHTML = getAnglesBoardHtml(
+          state.transversalAngle,
+          state.lineDistance,
+          id,
+          highlighted,
+          [],
+          true
+        );
+        return;
+      }
+
+      // Mission click flow
+      if (state.activeMissionId) {
+        if (state.activeMissionId === 4 || state.activeMissionId === 5) {
+          state.selectedAngleId = id;
+          // Redraw board with highlighted single item
+          renderBoardContainer();
+          return;
+        }
+
+        if (!state.selectedAngleId) {
+          state.selectedAngleId = id;
+          setFeedback('idle', 'İkinci açıyı seçin...');
+          renderBoardContainer();
+          return;
+        }
+
+        if (state.selectedAngleId === id) {
+          state.selectedAngleId = null;
+          setFeedback('idle', '');
+          renderBoardContainer();
+          return;
+        }
+
+        // Validate double-click match
+        const exists = state.foundPairsList.some(p => (p[0] === state.selectedAngleId && p[1] === id) || (p[0] === id && p[1] === state.selectedAngleId));
+        if (exists) {
+          setFeedback('error', 'Bu bağlantıyı zaten eşleştirdiniz!');
+          state.selectedAngleId = null;
+          renderBoardContainer();
+          return;
+        }
+
+        let isCorrect = false;
+        if (state.activeMissionId === 1) isCorrect = getCorrespondingId(state.selectedAngleId) === id;
+        else if (state.activeMissionId === 2) isCorrect = getAlternateInteriorId(state.selectedAngleId) === id;
+        else if (state.activeMissionId === 3) isCorrect = getAlternateExteriorId(state.selectedAngleId) === id;
+        else if (state.activeMissionId === 6) {
+          const currentStep = m6Steps[state.m6StepIdx];
+          isCorrect = (state.selectedAngleId === currentStep.first && id === currentStep.second) || (state.selectedAngleId === currentStep.second && id === currentStep.first);
+        }
+
+        if (isCorrect) {
+          playSound.success();
+          state.correctPairIds = [state.selectedAngleId, id];
+          state.foundPairsList.push([state.selectedAngleId, id]);
+          
+          const req = state.activeMissionId === 1 ? 3 : state.activeMissionId === 2 ? 2 : state.activeMissionId === 3 ? 2 : 1;
+          if (state.foundPairsList.length >= req) {
+            setFeedback('success', 'Tebrikler! Geçit bağlantısı stabilize edildi.');
+            
+            // Advance state
+            if (state.activeMissionId === 6) {
+              if (state.m6StepIdx + 1 >= m6Steps.length) {
+                state.stats.score += 500;
+                state.stats.energyCrystals += 120;
+                addNotification("Tüm Görevler Tamamlandı", "Hacker rütbesine yetiştiniz!");
+                state.activeMissionId = null;
+                renderApp();
+              } else {
+                state.m6StepIdx += 1;
+                state.foundPairsList = [];
+                state.correctPairIds = [];
+                state.selectedAngleId = null;
+                setTimeout(() => {
+                  setFeedback('idle', 'İkinci adım: ' + m6Steps[state.m6StepIdx].instruction);
+                  renderBoardContainer();
+                  renderGatewayPanel();
+                }, 1500);
+              }
+            } else {
+              const rewarded = missionsData.find(m => m.id === state.activeMissionId).scoreReward;
+              state.stats.score += rewarded;
+              state.stats.energyCrystals += 50;
+              addNotification("Görev Başarılı", "Paralel geçit kilitlerini hacklemeyi başardınız!");
+              setTimeout(() => {
+                state.activeMissionId = null;
+                renderApp();
+              }, 1800);
+            }
+          } else {
+            setFeedback('success', 'Eşleşme doğru! Diğer bağlantılara odaklanın.');
+            state.selectedAngleId = null;
+            renderBoardContainer();
+            renderGatewayPanel();
+          }
+        } else {
+          playSound.error();
+          setFeedback('error', 'Eşleşme başarısız! Açıların geometrik özelliklerini gözden geçirin.');
+          state.selectedAngleId = null;
+          renderBoardContainer();
+        }
+      }
+    };
+
+    window.handleM4Answer = function(ans) {
+      playSound.clickButton();
+      const current = m4Pairs[state.m4Index];
+      if (current.ans === ans) {
+        playSound.success();
+        setFeedback('success', 'Doğru tasnif!');
+        setTimeout(() => {
+          if (state.m4Index + 1 >= m4Pairs.length) {
+            state.stats.score += 350;
+            state.stats.energyCrystals += 70;
+            addNotification("Görev Tamamlandı", "Veri tasnif matrisi başarıyla uyuşturuldu!");
+            state.activeMissionId = null;
+            renderApp();
+          } else {
+            state.m4Index += 1;
+            setFeedback('idle', '');
+            renderGatewayPanel();
+          }
+        }, 1100);
+      } else {
+        playSound.error();
+        setFeedback('error', 'Yanlış tasnif! İpucu kılavuzunu inceleyin.');
+      }
+    };
+
+    window.handleM5Answer = function(ans) {
+      playSound.clickButton();
+      const current = m5Problems[state.m5Index];
+      if (current.ans === ans) {
+        playSound.success();
+        setFeedback('success', 'Siber kilit doğrulandı!');
+        setTimeout(() => {
+          if (state.m5Index + 1 >= m5Problems.length) {
+            state.stats.score += 400;
+            state.stats.energyCrystals += 90;
+            addNotification("Şebeke Çözüldü", "Tüm cebirsel denklemler çözüldü!");
+            state.activeMissionId = null;
+            renderApp();
+          } else {
+            state.m5Index += 1;
+            setFeedback('idle', '');
+            renderGatewayPanel();
+          }
+        }, 1100);
+      } else {
+        playSound.error();
+        setFeedback('error', 'Kilit tepkisiz! Hesaplamayı tekrar kontrol edin.');
+      }
+    };
+
+    window.toggleHint = function() {
+      state.hintOpen = !state.hintOpen;
+      renderApp();
+    };
+
+    window.changeView = function(view) {
+      playSound.clickButton();
+      state.view = view;
+      state.activeMissionId = null;
+      renderApp();
+    };
+
+    window.startMission = function(id) {
+      playSound.clickButton();
+      state.activeMissionId = id;
+      state.selectedAngleId = null;
+      state.highlightedAngleIds = [];
+      state.correctPairIds = [];
+      state.foundPairsList = [];
+      state.m4Index = 0;
+      state.m5Index = 0;
+      state.m6StepIdx = 0;
+      state.feedback = { status: 'idle', text: '' };
+      state.hintOpen = false;
+      renderApp();
+    };
+
+    function setFeedback(status, text) {
+      state.feedback = { status, text };
+      const outNode = document.getElementById('feedback-output');
+      if (outNode) {
+        if (!text) {
+          outNode.innerHTML = '';
+          outNode.style.display = 'none';
+        } else {
+          outNode.style.display = 'block';
+          outNode.innerHTML = text;
+          outNode.className = "mt-3 p-3 rounded-xl border text-xs leading-relaxed " + 
+            (status === 'success' ? 'bg-emerald-950/20 border-emerald-500/30 text-emerald-300' :
+             status === 'error' ? 'bg-rose-950/20 border-rose-500/30 text-rose-400' :
+             'bg-slate-900 border-slate-800 text-slate-300');
+        }
+      }
+    }
+
+    // Interactive slider updaters (Vanilla high fidelity performance)
+    window.updateTransversalAngle = function(val) {
+      state.transversalAngle = Number(val);
+      const textVal = document.getElementById('angle-val-display');
+      if (textVal) textVal.innerText = val + '°';
+      const textHeaderVal = document.getElementById('angle-header-display');
+      if (textHeaderVal) textHeaderVal.innerText = 'Açı d3: ' + val + '°';
+      
+      const activeYondes = getCorrespondingId(state.focusedAngleId);
+      const activeIcTers = getAlternateInteriorId(state.focusedAngleId);
+      const activeDisTers = getAlternateExteriorId(state.focusedAngleId);
+      const activeTers = getVerticalId(state.focusedAngleId);
+      const highlighted = [activeYondes, activeIcTers, activeDisTers, activeTers].filter(Boolean);
+
+      document.getElementById('board-container').innerHTML = getAnglesBoardHtml(
+        state.transversalAngle,
+        state.lineDistance,
+        state.focusedAngleId,
+        highlighted,
+        [],
+        true
+      );
+      renderRelationsPanel();
+    };
+
+    window.updateLineDistance = function(val) {
+      state.lineDistance = Number(val);
+      const textVal = document.getElementById('dist-val-display');
+      if (textVal) textVal.innerText = val + ' nm';
+      
+      const activeYondes = getCorrespondingId(state.focusedAngleId);
+      const activeIcTers = getAlternateInteriorId(state.focusedAngleId);
+      const activeDisTers = getAlternateExteriorId(state.focusedAngleId);
+      const activeTers = getVerticalId(state.focusedAngleId);
+      const highlighted = [activeYondes, activeIcTers, activeDisTers, activeTers].filter(Boolean);
+
+      document.getElementById('board-container').innerHTML = getAnglesBoardHtml(
+        state.transversalAngle,
+        state.lineDistance,
+        state.focusedAngleId,
+        highlighted,
+        [],
+        true
+      );
+    };
+
+    // ----------------- SUB-DOM GENERATION -----------------
+    function renderBoardContainer() {
+      const container = document.getElementById('board-container');
+      if (container) {
+        container.innerHTML = getAnglesBoardHtml(
+          state.transversalAngle,
+          state.lineDistance,
+          state.selectedAngleId,
+          state.selectedAngleId ? [state.selectedAngleId] : [],
+          state.correctPairIds,
+          false
+        );
+      }
+    }
+
+    function renderGatewayPanel() {
+      const parent = document.getElementById('gateway-panel-inner');
+      if (!parent) return;
+
+      if (state.activeMissionId === 4) {
+        const current = m4Pairs[state.m4Index];
+        parent.innerHTML = `
+          <div class="space-y-3">
+            <div class="p-3 bg-slate-950 border border-slate-850 rounded-xl">
+              <span class="text-[10px] font-mono text-cyan-400 font-bold block mb-1">Doğrulama Verisi (${state.m4Index + 1}/4)</span>
+              <p class="text-xs text-white font-medium">${current.text}</p>
+            </div>
+            <div class="flex flex-col gap-2 mt-2">
+              <button onclick="handleM4Answer('yondes')" class="w-full text-left p-2.5 rounded-lg border border-slate-800 bg-slate-950 text-xs font-bold text-cyan-400 hover:border-cyan-500/40 transition-colors">Yöndeş Açılar (Eşittir)</button>
+              <button onclick="handleM4Answer('ic_ters')" class="w-full text-left p-2.5 rounded-lg border border-slate-800 bg-slate-950 text-xs font-bold text-pink-400 hover:border-pink-500/40 transition-colors">İç Ters Açılar (Eşittir)</button>
+              <button onclick="handleM4Answer('dis_ters')" class="w-full text-left p-2.5 rounded-lg border border-slate-800 bg-slate-950 text-xs font-bold text-amber-500 hover:border-amber-500/40 transition-colors">Dış Ters Açılar (Eşittir)</button>
+            </div>
+          </div>
+        `;
+      } else if (state.activeMissionId === 5) {
+        const current = m5Problems[state.m5Index];
+        let optionsHtml = '';
+        current.options.forEach(opt => {
+          optionsHtml += `
+            <button onclick="handleM5Answer(${opt})" class="p-2.5 rounded-lg border border-slate-800 bg-slate-950 text-xs font-mono font-bold text-white text-center hover:border-cyan-500/40 transition-colors">${opt}°</button>
+          `;
+        });
+        parent.innerHTML = `
+          <div class="space-y-3">
+            <div class="p-3 bg-slate-950 border border-slate-850 rounded-xl">
+              <span class="text-[10px] font-mono text-cyan-400 font-bold block mb-1">Cebir Sorusu ${state.m5Index + 1}/3</span>
+              <p class="text-xs text-white font-medium">${current.q}</p>
+            </div>
+            <div class="grid grid-cols-2 gap-2 mt-2">
+              ${optionsHtml}
+            </div>
+          </div>
+        `;
+      } else {
+        let textToShow = 'Geçidi açmak için tahta üzerinde eşleşen ikililere dokunun. Sistem veriyi otomatik olarak tasnif edecektir.';
+        if (state.activeMissionId === 6) {
+          textToShow = 'Sıralı hack adımı: <strong class="text-cyan-400 font-bold">' + m6Steps[state.m6StepIdx].instruction + '</strong>';
+        }
+        parent.innerHTML = `
+          <div class="space-y-3 text-xs text-slate-300 leading-relaxed">
+            <p>${textToShow}</p>
+          </div>
+        `;
+      }
+    }
+
+    function renderRelationsPanel() {
+      const panel = document.getElementById('relations-panel-inner');
+      if (!panel) return;
+
+      const id = state.focusedAngleId;
+      if (!id) {
+        panel.innerHTML = '<p class="text-xs text-slate-500 italic text-center">İlişkileri incelemek için lütfen soldaki tahtadan bir açıya dokunun.</p>';
+        return;
+      }
+
+      const transversalAngle = state.transversalAngle;
+      const val = [1, 4, 5, 8].includes(id) ? transversalAngle : 180 - transversalAngle;
+
+      const activeYondes = getCorrespondingId(id);
+      const activeIcTers = getAlternateInteriorId(id);
+      const activeDisTers = getAlternateExteriorId(id);
+      const activeTers = getVerticalId(id);
+
+      panel.innerHTML = `
+        <div class="space-y-3.5">
+          <div class="p-3 bg-cyan-950/20 border border-cyan-500/30 rounded-xl">
+            <span class="text-[9px] font-mono text-cyan-400 font-black block">ODAKLANILAN LİMİT</span>
+            <h4 class="text-white text-sm font-extrabold font-mono mt-1">Açı ${id} = <span class="text-cyan-300">${val}°</span></h4>
+          </div>
+
+          <div class="space-y-2 mt-2">
+            <div class="flex justify-between items-center p-2 rounded-lg bg-slate-950 border border-slate-850">
+              <span class="text-[11px] font-sans font-bold text-slate-300">Yöndeş (Aynı yöne bakan)</span>
+              <span class="text-xs font-mono font-bold text-cyan-400">Açı ${activeYondes} (${val}°)</span>
+            </div>
+
+            ${activeIcTers ? `
+              <div class="flex justify-between items-center p-2 rounded-lg bg-slate-950 border border-slate-850">
+                <span class="text-[11px] font-sans font-bold text-slate-300">İç Ters (Enine Çapraz)</span>
+                <span class="text-xs font-mono font-bold text-pink-400">Açı ${activeIcTers} (${val}°)</span>
+              </div>
+            ` : ''}
+
+            ${activeDisTers ? `
+              <div class="flex justify-between items-center p-2 rounded-lg bg-slate-950 border border-slate-850">
+                <span class="text-[11px] font-sans font-bold text-slate-300">Dış Ters (Boyuna Çapraz)</span>
+                <span class="text-xs font-mono font-bold text-amber-500">Açı ${activeDisTers} (${val}°)</span>
+              </div>
+            ` : ''}
+
+            <div class="flex justify-between items-center p-2 rounded-lg bg-slate-950 border border-slate-850">
+              <span class="text-[11px] font-sans font-bold text-slate-300">Ters (Kesişen Çapraz)</span>
+              <span class="text-xs font-mono font-bold text-violet-400">Açı ${activeTers} (${val}°)</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderNotifications() {
+      const container = document.getElementById('notification-stack');
+      if (!container) return;
+
+      let notifsHtml = '';
+      state.notifications.forEach(n => {
+        notifsHtml += `
+          <div class="p-4 rounded-xl border border-cyan-500/30 bg-slate-900 text-white shadow-xl flex gap-3 animate-pulse">
+            <span>⭐</span>
+            <div>
+              <h4 class="text-xs font-extrabold">${n.title}</h4>
+              <p class="text-[10px] text-slate-300">${n.desc}</p>
+            </div>
+          </div>
+        `;
+      });
+      container.innerHTML = notifsHtml;
+    }
+
+    // ----------------- COMPONENT RENDER SWITCHBOARD -----------------
+    function renderApp() {
+      const rootNode = document.getElementById('app');
+      
+      // HUD Header
+      let headerHtml = `
+        <header class="border-b border-slate-900 bg-slate-950/80 sticky top-0 z-40 backdrop-blur-lg mb-6 pb-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <span class="text-2xl">🎯</span>
+              <div>
+                <h1 class="text-sm font-black font-display tracking-tight text-white flex items-center gap-1.5">
+                  AÇI CASUSLARI
+                  <span class="text-[9px] text-cyan-400 font-mono font-bold bg-cyan-950 px-1.5 py-0.5 rounded border border-cyan-500/10 uppercase">
+                    Çevrimdışı Sürüm
+                  </span>
+                </h1>
+                <p class="text-[10px] text-slate-400 font-mono font-bold uppercase tracking-wider">Geometrik Sızma Terminali</p>
+              </div>
+            </div>
+
+            <!-- Top-Right Branding & Utilities -->
+            <div class="flex items-center gap-3">
+              <a href="https://matematikrontgeni.com" target="_blank" rel="noopener noreferrer" class="shrink-0 border-r border-slate-900 pr-3 mr-1">
+                <img 
+                  src="https://matematikrontgeni.com/tema/logo_mr.png" 
+                  alt="Matematik Röntgeni" 
+                  class="h-8 w-auto object-contain bg-slate-950/30 px-1.5 py-0.5 rounded-lg border border-slate-800"
+                  referrerPolicy="no-referrer"
+                />
+              </a>
+            </div>
+          </div>
+        </header>
+
+        <!-- Profile HUD -->
+        <div class="offline-grid-hud mb-6">
+          <div class="p-3 rounded-xl border border-slate-900 bg-slate-900/40">
+            <span class="text-[9px] text-slate-500 font-bold block leading-none font-mono">CASUS RÜTBESİ</span>
+            <span class="text-xs md:text-sm font-bold text-white font-mono block mt-1">${state.stats.rank}</span>
+          </div>
+          <div class="p-3 rounded-xl border border-slate-900 bg-slate-900/40">
+            <span class="text-[9px] text-slate-500 font-bold block leading-none font-mono">TOPLAM SKOR</span>
+            <span class="text-xs md:text-sm font-bold text-yellow-500 font-mono block mt-1">${state.stats.score} XP</span>
+          </div>
+          <div class="p-3 rounded-xl border border-slate-900 bg-slate-900/40">
+            <span class="text-[9px] text-slate-500 font-bold block leading-none font-mono">KRİSTAL GÜCÜ</span>
+            <span class="text-xs md:text-sm font-black text-cyan-400 font-mono block mt-1">${state.stats.energyCrystals} 💎</span>
+          </div>
+        </div>
+
+        <!-- Application Navigation Tab bar -->
+        <div class="flex gap-2 mb-6 border-b border-slate-900 pb-4">
+          <button
+            onclick="changeView('missions')"
+            class="px-4 py-2 rounded-xl text-xs font-bold font-mono transition-all ${state.view === 'missions' ? 'bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/10' : 'text-slate-400 hover:text-white bg-slate-900/50 hover:bg-slate-900'}"
+          >
+            Görev Haritası
+          </button>
+          <button
+            onclick="changeView('lab')"
+            class="px-4 py-2 rounded-xl text-xs font-bold font-mono transition-all ${state.view === 'lab' ? 'bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/10' : 'text-slate-400 hover:text-white bg-slate-900/50 hover:bg-slate-900'}"
+          >
+            Simülasyon Laboratuvarı
+          </button>
+        </div>
+      `;
+
+      // Views switcher
+      let viewBodyHtml = '';
+      if (state.view === 'lab') {
+        const transversalAngle = state.transversalAngle;
+        const lineDistance = state.lineDistance;
+        const focusedAngleId = state.focusedAngleId;
+
+        const activeYondes = getCorrespondingId(focusedAngleId);
+        const activeIcTers = getAlternateInteriorId(focusedAngleId);
+        const activeDisTers = getAlternateExteriorId(focusedAngleId);
+        const activeTers = getVerticalId(focusedAngleId);
+        const highlighted = [activeYondes, activeIcTers, activeDisTers, activeTers].filter(Boolean);
+
+        viewBodyHtml = `
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-7 flex flex-col space-y-4">
+              <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 flex justify-between items-center">
+                <div>
+                  <h2 class="text-sm font-extrabold text-white">Laboratuvar Modu</h2>
+                  <p class="text-[10px] text-slate-400 font-mono text-cyan-400 block mt-0.5">SERBEST GEOMETRİK MANİPÜLASYON HÜCRESİ</p>
+                </div>
+                <div id="angle-header-display" class="bg-cyan-950/40 border border-cyan-500/20 px-2.5 py-1 rounded text-xs font-mono text-cyan-400 font-bold">
+                  Açı d3: ${transversalAngle}°
+                </div>
+              </div>
+
+              <div id="board-container" class="flex flex-col items-center w-full">
+                ${getAnglesBoardHtml(transversalAngle, lineDistance, focusedAngleId, highlighted, [], true)}
+              </div>
+
+              <div class="p-4 bg-slate-900 border border-slate-850 rounded-xl space-y-4">
+                <div>
+                  <div class="flex justify-between text-xs font-mono text-slate-400 mb-1.5 font-bold">
+                    <span>Kesen Lazer Açısı</span>
+                    <span id="angle-val-display" class="text-cyan-400">${transversalAngle}°</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="25"
+                    max="155"
+                    value="${transversalAngle}"
+                    oninput="updateTransversalAngle(this.value)"
+                    class="w-full accent-cyan-500 bg-slate-950 h-1.5 rounded-lg cursor-pointer"
+                  />
+                </div>
+
+                <div>
+                  <div class="flex justify-between text-xs font-mono text-slate-400 mb-1.5 font-bold">
+                    <span>Paralel Hat Genişliği</span>
+                    <span id="dist-val-display" class="text-blue-400">${lineDistance} nm</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="100"
+                    max="180"
+                    value="${lineDistance}"
+                    oninput="updateLineDistance(this.value)"
+                    class="w-full accent-blue-500 bg-slate-950 h-1.5 rounded-lg cursor-pointer"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="lg:col-span-5 space-y-4">
+              <div class="p-4 bg-slate-900 border border-slate-800 rounded-xl space-y-4">
+                <span class="text-[10px] text-slate-400 font-mono block border-b border-slate-850 pb-2 font-bold uppercase">Açı İlişkileri Gezgini</span>
+                <div id="relations-panel-inner">
+                  <!-- Relations details rendered here -->
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        // Missions Panel
+        if (!state.activeMissionId) {
+          let missionsCards = '';
+          missionsData.forEach(m => {
+            missionsCards += `
+              <div class="relative flex flex-col justify-between p-5 rounded-2xl border bg-slate-900 border-slate-800 hover:border-cyan-500/50 hover:shadow-[0_0_20px_rgba(34,211,238,0.05)] transition-all duration-300">
+                <div>
+                  <div class="flex justify-between items-start mb-3">
+                    <span class="text-[10px] font-mono text-cyan-400 font-bold bg-cyan-950/50 px-2 py-0.5 rounded border border-cyan-500/20">${m.codename}</span>
+                    <span class="text-[10px] font-mono font-bold text-amber-400 bg-amber-950/30 px-2 py-0.5 rounded border border-amber-500/20">AKTİF HAREKÂT</span>
+                  </div>
+                  <h3 class="text-sm font-bold text-white mb-2">${m.title}</h3>
+                  <p class="text-xs text-slate-400 leading-relaxed mb-3">${m.description}</p>
+                  <div class="mb-4 text-[10.5px] font-mono px-2.5 py-1.5 rounded-lg bg-cyan-950/40 border border-cyan-500/20 text-cyan-300 font-bold flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse shrink-0"></span>
+                    <span>TEMEL HEDEF: ${m.objectiveText}</span>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between pt-3 border-t border-slate-800">
+                  <span class="text-xs font-mono text-slate-400">Ödül: <strong class="text-amber-500">+${m.scoreReward} Puan</strong></span>
+                  <button onclick="startMission(${m.id})" class="text-xs px-3.5 py-1.5 rounded-lg font-extrabold bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/20 transition-all cursor-pointer">Göreve Başla</button>
+                </div>
+              </div>
+            `;
+          });
+
+          viewBodyHtml = `
+            <div class="space-y-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                ${missionsCards}
+              </div>
+            </div>
+          `;
+        } else {
+          // Inside selective active mission gameplay
+          const activeMission = missionsData.find(m => m.id === state.activeMissionId);
+          viewBodyHtml = `
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div class="lg:col-span-7 flex flex-col space-y-4">
+                <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+                  <div>
+                    <button onclick="startMission(null)" class="text-[10px] font-mono text-cyan-400 font-bold hover:underline mb-1 block cursor-pointer">← Geri Dön</button>
+                    <h2 class="text-sm font-extrabold text-white">${activeMission.title}</h2>
+                  </div>
+                  <div class="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-cyan-950/40 border border-cyan-500/20 shadow-inner">
+                    <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                    <div>
+                      <span class="text-[9px] font-mono text-slate-400 block font-bold leading-none">🎯 GÖREV HEDEFİ</span>
+                      <span class="text-[11px] font-mono text-cyan-300 font-extrabold block mt-0.5">${activeMission.objectiveText}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="board-container" class="flex flex-col items-center w-full">
+                  ${getAnglesBoardHtml(state.transversalAngle, 140, state.selectedAngleId, state.selectedAngleId ? [state.selectedAngleId] : [], state.correctPairIds, false)}
+                </div>
+              </div>
+
+              <div class="lg:col-span-5 space-y-4">
+                <div class="p-4 bg-slate-900 border border-slate-800 rounded-xl space-y-4">
+                  <span class="text-[10px] text-slate-400 font-mono block border-b border-slate-850 pb-2 font-bold uppercase">ŞEBEKE VERİ GEÇİDİ</span>
+                  
+                  <div id="gateway-panel-inner">
+                    <!-- Dynamic problem or instruction details -->
+                  </div>
+
+                  <!-- Feedback Box -->
+                  <div id="feedback-output" style="display: none;"></div>
+
+                  <!-- Helper collapse drawer -->
+                  <div class="mt-4 pt-4 border-t border-slate-850">
+                    <button
+                      onclick="toggleHint()"
+                      class="w-full p-2 rounded-xl border border-dashed transition-all flex items-center justify-between font-mono text-xs cursor-pointer bg-slate-950/40 hover:bg-slate-900 border-slate-800 hover:border-cyan-500/40 text-cyan-400 font-bold"
+                    >
+                      <span>💡 GEOMETRİK ANALİZ REHBERİ</span>
+                      <span>${state.hintOpen ? '▲ Kılavuzu Kapat' : '▼ Kılavuzu Göster'}</span>
+                    </button>
+                    
+                    ${state.hintOpen ? `
+                      <div class="mt-3 p-3.5 bg-slate-950/80 rounded-xl border border-slate-900 space-y-3 font-sans">
+                        <div class="space-y-1">
+                          <span class="text-[9px] font-mono text-cyan-400 font-bold block uppercase tracking-wide">Aktif İpucu Analizi</span>
+                          <p class="text-slate-300 text-[11px]">
+                            ${state.activeMissionId === 1 ? "Tahtadan rastgele bir açı seç Casus. Ardından onunla aynı yöne bakan (örneğin ikisi de sol-üstte yer alan) yöndeş ortağını bularak şebekeyi stabil hale getir!" : ""}
+                            ${state.activeMissionId === 2 ? "İç ters açılar, paralel çizgilerin iç bölgesinde kalan ve kesen çizginin zıt yönlerine bakan doğrultu çiftleridir (örneğin Açı 3 ile Açı 6 veya Açı 4 ile Açı 5). Birisine dokunup eşini bul!" : ""}
+                            ${state.activeMissionId === 3 ? "Dış ters açılar, iki paralel çizginin dış kısmında kalan ve kesen çizginin zıt yönlerine yönlenen açılardır (örneğin Açı 1 ile Açı 8, veya Açı 2 ile Açı 7). Bu çiftleri birbirine dokundurarak frekansı eşleştir!" : ""}
+                            ${state.activeMissionId === 4 ? "Tasnif merkezine veri hatası sızdı! Gösterilen açı çiftlerinin Yöndeş mi, İç Ters mi yoksa Dış Ters mi olduğunu bul ve veri bankasını temizle!" : ""}
+                            ${state.activeMissionId === 5 ? "Şebekenin eksik açılarını tamamlamamız gerek! Yöndeş, iç ters veya dış ters açıların kendi aralarındaki eşitlik özelliklerini kullanarak cebirsel soruları yanıtla!" : ""}
+                            ${state.activeMissionId === 6 ? "Bu nihai hacker sınavı casus! Sana sırayla yöndeş, iç ters ve dış ters açılar soracağım. Hepsini zamanında ve doğru sırayla birbiri ardına tetikle!" : ""}
+                          </p>
+                        </div>
+                        
+                        <div class="space-y-1">
+                          <span class="text-[9px] font-mono text-amber-500 font-bold block uppercase tracking-wide">Geometri Kural Seti</span>
+                          <p class="text-slate-400 text-[10.5px]">
+                            Paralel iki doğrunun bir kesenle yaptığı açılarda: aynı yöne bakan durumlar <strong>Yöndeş</strong>; hatların iç tarafındaki çaprazlar <strong>İç Ters</strong>; hatların dışındaki çaprazlar ise <strong>Dış Ters</strong> olarak adlandırılır. Bu grupların kendi içlerindeki ölçü değerleri birbirine daima eşittir.
+                          </p>
+                        </div>
+                      </div>
+                    ` : ''}
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      // Footer
+      let footerHtml = `
+        <footer class="mt-12 pt-4 border-t border-slate-900 flex flex-col md:flex-row items-center justify-between gap-3 text-[10px] font-mono text-slate-500">
+          <span>© ${new Date().getFullYear()} Açı Casusları - Matematik Röntgeni Kampüsü</span>
+          <span>Doğru parçalarının kesen lazerlerle uyumu. Çevrimdışı Sürüm</span>
+        </footer>
+
+        <!-- Notification container stack -->
+        <div id="notification-stack" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm"></div>
+      `;
+
+      rootNode.innerHTML = headerHtml + viewBodyHtml + footerHtml;
+
+      // Lazy node rendering states
+      if (state.view === 'lab') {
+        renderRelationsPanel();
+      } else if (state.activeMissionId) {
+        renderGatewayPanel();
+      }
+      renderNotifications();
+    }
+
+    // Initialize display on window load
+    window.onload = function() {
+      renderApp();
+    };
+  </script>
+</body>
+</html>

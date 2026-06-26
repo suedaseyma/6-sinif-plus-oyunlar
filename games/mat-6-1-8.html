@@ -1,0 +1,1617 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAT 6.1.8 - Kesirport</title>
+    <style>
+        :root {
+            --bg-deep: #0a0a1a;
+            --bg-space: #0d1128;
+            --purple: #7b2ff7;
+            --purple-glow: #9d5cff;
+            --turquoise: #00e5c3;
+            --turquoise-glow: #3dffe5;
+            --navy: #1a1a4e;
+            --neon-blue: #4da8ff;
+            --neon-glow: #7cc4ff;
+            --green-bright: #39ff14;
+            --green-glow: #7aff5c;
+            --panel-bg: rgba(13, 17, 40, 0.9);
+            --panel-border: rgba(123, 47, 247, 0.4);
+            --text-primary: #e0e0ff;
+            --text-secondary: #b0b0d0;
+            --danger: #ff4757;
+            --warning: #ffa502;
+            --success: #2ed573;
+            --gold: #ffd700;
+            --crystal-fraction: #ff6b9d;
+            --crystal-decimal: #4da8ff;
+            --crystal-percent: #39ff14;
+            --tank-bg: rgba(20, 25, 60, 0.7);
+            --tank-border: rgba(123, 47, 247, 0.6);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Exo 2', 'Orbitron', sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            overflow-y: auto;
+            min-height: 100vh;
+            width: 100vw;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            cursor: default;
+        }
+
+        /* Starfield background */
+        .starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle var(--dur) ease-in-out infinite;
+            animation-delay: var(--delay);
+        }
+        @keyframes twinkle {
+            0%, 100% {
+                opacity: 0.3;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.8);
+            }
+        }
+        @keyframes floatUp {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-120px) scale(0.3);
+                opacity: 0;
+            }
+        }
+        @keyframes shake {
+            0%, 100% {
+                transform: translateX(0);
+            }
+            20% {
+                transform: translateX(-8px);
+            }
+            40% {
+                transform: translateX(8px);
+            }
+            60% {
+                transform: translateX(-5px);
+            }
+            80% {
+                transform: translateX(5px);
+            }
+        }
+        @keyframes successPulse {
+            0% {
+                box-shadow: 0 0 20px var(--success);
+            }
+            50% {
+                box-shadow: 0 0 60px var(--success), 0 0 100px var(--green-glow);
+            }
+            100% {
+                box-shadow: 0 0 20px var(--success);
+            }
+        }
+        @keyframes crystalMerge {
+            0% {
+                transform: scale(1);
+                filter: brightness(1);
+            }
+            50% {
+                transform: scale(1.2);
+                filter: brightness(2);
+            }
+            100% {
+                transform: scale(1);
+                filter: brightness(1);
+            }
+        }
+
+        /* Main layout - top bar, then three columns */
+        .game-container {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: 280px 1fr 280px;
+            grid-template-rows: auto 1fr;
+            grid-template-areas:
+                'top top top'
+                'left center right';
+            height: 100vh;
+            gap: 12px;
+            padding: 12px;
+        }
+
+        /* Panels */
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 14px;
+            backdrop-filter: blur(10px);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        .panel-top {
+            grid-area: top;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-around;
+            border-top: 3px solid var(--purple);
+            border-radius: 16px;
+            padding: 12px 24px;
+            gap: 16px;
+            flex-wrap: wrap;
+            min-height: 60px;
+        }
+        .panel-left {
+            grid-area: left;
+            border-left: 3px solid var(--turquoise);
+        }
+        .panel-center {
+            grid-area: center;
+            border: 2px solid var(--panel-border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            overflow: visible;
+        }
+        .panel-right {
+            grid-area: right;
+            border-right: 3px solid var(--purple);
+        }
+
+        /* Headers */
+        .panel h2 {
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--turquoise);
+            text-align: center;
+            border-bottom: 1px solid rgba(0, 229, 195, 0.3);
+            padding-bottom: 8px;
+            margin-bottom: 4px;
+            font-weight: 700;
+        }
+        .panel h3 {
+            font-size: 0.85rem;
+            color: var(--neon-blue);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        /* Mission info */
+        .mission-card {
+            background: rgba(30, 30, 70, 0.6);
+            border-radius: 12px;
+            padding: 12px;
+            border: 1px solid rgba(77, 168, 255, 0.3);
+        }
+        .mission-card .planet-name {
+            color: var(--turquoise);
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        .mission-card .energy-need {
+            color: var(--warning);
+            font-size: 1.3rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        .mission-card .desc {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            line-height: 1.4;
+            margin-top: 4px;
+        }
+
+        /* Prediction box with vertical fraction inputs */
+        .prediction-box {
+            background: rgba(20, 20, 50, 0.7);
+            border: 2px dashed rgba(255, 215, 0, 0.5);
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+        }
+        .fraction-input-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            margin: 8px 0;
+        }
+        .fraction-input-container input {
+            width: 80px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            padding: 6px 4px;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            text-align: center;
+            font-family: inherit;
+            outline: none;
+        }
+        .fraction-input-container input:focus {
+            box-shadow: 0 0 10px var(--gold);
+        }
+        .fraction-bar {
+            width: 60px;
+            height: 3px;
+            background: var(--gold);
+            margin: 2px 0;
+            border-radius: 2px;
+        }
+
+        /* Center - Energy Tank */
+        .energy-tank-zone {
+            position: relative;
+            width: 100%;
+            max-width: 550px;
+            min-height: 240px;
+            background: var(--tank-bg);
+            border: 3px solid var(--tank-border);
+            border-radius: 24px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 30px 20px;
+            transition: all 0.4s ease;
+            box-shadow: inset 0 0 60px rgba(123, 47, 247, 0.15);
+        }
+        .energy-tank-zone.highlight {
+            border-color: var(--turquoise);
+            box-shadow: inset 0 0 80px rgba(0, 229, 195, 0.2), 0 0 40px rgba(0, 229, 195, 0.3);
+        }
+        .energy-tank-zone.error {
+            animation: shake 0.5s ease;
+            border-color: var(--danger) !important;
+            box-shadow: 0 0 30px rgba(255, 71, 87, 0.5) !important;
+        }
+        .energy-tank-zone.success {
+            animation: successPulse 0.8s ease 3;
+            border-color: var(--success) !important;
+        }
+        .tank-label {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--navy);
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            color: var(--turquoise);
+            border: 1px solid var(--turquoise);
+            white-space: nowrap;
+            font-weight: bold;
+        }
+        .tank-fill-indicator {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.85rem;
+            color: var(--turquoise-glow);
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+        .tank-fill-indicator{
+            text-shadow: 0 0 6px rgba(0, 229, 195, 0.4);
+        }
+        .tank-target {
+            position: absolute;
+            top: 8px;
+            right: 16px;
+            font-size: 0.85rem;
+            color: var(--warning);
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        /* Draggable crystals */
+        .crystal-shelf {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 12px;
+            padding: 14px;
+            background: rgba(15, 15, 40, 0.5);
+            border-radius: 12px;
+            border: 1px dashed rgba(255, 255, 255, 0.15);
+            min-height: 110px;
+            align-items: center;
+            width: 100%;
+        }
+        .crystal {
+            width: 75px;
+            height: 95px;
+            border-radius: 12px;
+            cursor: grab;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            transition: all 0.2s ease;
+            position: relative;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            z-index: 10;
+            text-align: center;
+        }
+        .crystal:hover {
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+            z-index: 50;
+        }
+        .crystal:active {
+            cursor: grabbing;
+        }
+        .crystal.fraction {
+            background: linear-gradient(135deg, #2a1040, #4a1a60);
+            border-color: #ff6b9d;
+            color: #ffb3cc;
+            box-shadow: 0 4px 20px rgba(255, 107, 157, 0.3);
+        }
+        .crystal.decimal {
+            background: linear-gradient(135deg, #0a2040, #1a3a60);
+            border-color: #4da8ff;
+            color: #a0d4ff;
+            box-shadow: 0 4px 20px rgba(77, 168, 255, 0.3);
+        }
+        .crystal.percent {
+            background: linear-gradient(135deg, #0a3010, #1a4a20);
+            border-color: #39ff14;
+            color: #9fff8c;
+            box-shadow: 0 4px 20px rgba(57, 255, 20, 0.3);
+        }
+        .crystal.dragging {
+            opacity: 0.5;
+            transform: scale(0.9);
+        }
+        .crystal .crystal-icon {
+            font-size: 1.8rem;
+            margin-bottom: 2px;
+        }
+        .crystal .crystal-value {
+            font-size: 0.8rem;
+            font-weight: 800;
+        }
+        .crystal.in-tank {
+            cursor: pointer;
+            animation: crystalMerge 0.3s ease;
+        }
+        .crystal.in-tank:hover {
+            transform: scale(1.08);
+            box-shadow: 0 6px 25px rgba(255, 71, 87, 0.6);
+            border-color: var(--danger);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 18px;
+            border-radius: 25px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            letter-spacing: 1px;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-family: inherit;
+            position: relative;
+            overflow: hidden;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--purple), #5a1fc0);
+            color: white;
+            box-shadow: 0 4px 15px rgba(123, 47, 247, 0.4);
+        }
+        .btn-primary:hover {
+            box-shadow: 0 6px 25px rgba(123, 47, 247, 0.7);
+            transform: translateY(-2px);
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #1a6b35, #2ed573);
+            color: white;
+            box-shadow: 0 4px 15px rgba(46, 213, 115, 0.4);
+        }
+        .btn-success:hover {
+            box-shadow: 0 6px 25px rgba(46, 213, 115, 0.7);
+            transform: translateY(-2px);
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, #8b5a00, #ffa502);
+            color: #1a1a1a;
+            box-shadow: 0 4px 15px rgba(255, 165, 2, 0.4);
+        }
+        .btn-warning:hover {
+            box-shadow: 0 6px 25px rgba(255, 165, 2, 0.7);
+            transform: translateY(-2px);
+        }
+        .btn-small {
+            padding: 6px 14px;
+            font-size: 0.7rem;
+            border-radius: 15px;
+        }
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Tools panel */
+        .tool-card {
+            background: rgba(25, 25, 55, 0.6);
+            border-radius: 10px;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-size: 0.8rem;
+        }
+        .tool-card:hover {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 20px rgba(77, 168, 255, 0.3);
+        }
+        .tool-card.active {
+            border-color: var(--turquoise) !important;
+            box-shadow: 0 0 25px rgba(0, 229, 195, 0.4) !important;
+            background: rgba(0, 229, 195, 0.15);
+        }
+        .tool-card .tool-icon {
+            font-size: 1.8rem;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        /* Stats bar */
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+        .stat-item .stat-icon {
+            font-size: 1.4rem;
+        }
+        .stat-value {
+            font-weight: bold;
+            color: var(--turquoise);
+            font-size: 1.1rem;
+        }
+        .progress-bar-wrap {
+            width: 120px;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--purple), var(--turquoise));
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        /* Logo styling */
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .logo-mr {
+            height: 38px;
+            max-width: 140px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 6px rgba(0, 229, 195, 0.3));
+            transition: transform 0.3s ease;
+        }
+        .logo-mr:hover {
+            transform: scale(1.05);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(8px);
+        }
+        .modal {
+            background: var(--panel-bg);
+            border: 2px solid var(--purple);
+            border-radius: 20px;
+            padding: 28px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(123, 47, 247, 0.5);
+            transform: translateY(20px);
+            opacity: 0;
+            animation: modalFadeIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes modalFadeIn {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        .modal h2 {
+            color: var(--turquoise);
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+            font-size: 1.8rem;
+        }
+        .modal p {
+            color: var(--text-secondary);
+            margin: 12px 0;
+            line-height: 1.6;
+        }
+        .badge-earned {
+            font-size: 4rem;
+            animation: crystalMerge 1s ease infinite;
+            display: inline-block;
+            margin: 15px 0;
+        }
+
+        /* Visual Modeling styling */
+        .visual-bar-segment {
+            height: 30px;
+            border-right: 1px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            transition: all 0.3s ease;
+        }
+        .visual-bar-segment:last-child {
+            border-right: none;
+        }
+        
+        /* Floating particles */
+        .particle {
+            position: fixed;
+            pointer-events: none;
+            z-index: 200;
+            font-weight: bold;
+            animation: floatUpAndFade 1.2s ease-out forwards;
+            font-size: 1.4rem;
+            text-shadow: 0 0 10px rgba(0,0,0,0.8);
+        }
+        @keyframes floatUpAndFade {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) scale(0.6);
+                opacity: 0;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .game-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto auto;
+                grid-template-areas:
+                    'top'
+                    'left'
+                    'center'
+                    'right';
+                height: auto;
+                min-height: 100vh;
+                gap: 12px;
+                padding: 12px;
+                overflow-y: auto;
+            }
+            .panel {
+                max-height: none;
+                overflow-y: visible;
+            }
+            .panel-left, .panel-right {
+                border: 2px solid var(--panel-border);
+            }
+        }
+        @media (max-width: 500px) {
+            .game-container {
+                gap: 8px;
+                padding: 6px;
+            }
+            .panel {
+                padding: 10px;
+                border-radius: 12px;
+            }
+            .crystal {
+                width: 65px;
+                height: 85px;
+                font-size: 0.75rem;
+                border-radius: 10px;
+            }
+            .crystal .crystal-icon {
+                font-size: 1.4rem;
+            }
+            .energy-tank-zone {
+                min-height: 180px;
+                padding: 15px;
+                gap: 8px;
+            }
+            .panel-top {
+                flex-direction: column;
+                gap: 8px;
+                align-items: center;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Starfield -->
+    <div class="starfield" id="starfield"></div>
+
+    <!-- Game Container -->
+    <div class="game-container" id="gameContainer">
+
+        <!-- Top Panel (Stats & Progress & Logo) -->
+        <div class="panel panel-top" id="panelTop">
+            <div class="stat-item">
+                <span class="stat-icon">⚡</span> Güç Seviyesi: <span class="stat-value" id="statEnergy">0%</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-icon">⭐</span> Toplam Puan: <span class="stat-value" id="statStars">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-icon">💎</span> Toplanan Kristaller: <span class="stat-value" id="statCrystals">0</span>
+            </div>
+            <div class="stat-item">
+                <span>Galaksi İlerlemesi:</span>
+                <div class="progress-bar-wrap">
+                    <div class="progress-bar-fill" id="progressBar" style="width:0%;"></div>
+                </div>
+                <span style="font-size:0.75rem; font-weight: bold; margin-left: 5px;" id="progressText">Görev 1/6</span>
+            </div>
+            <!-- Matematik Röntgeni Logo -->
+            <div class="logo-container">
+                <img src="https://matematikrontgeni.com/tema/logo_mr.png" alt="Matematik Röntgeni" class="logo-mr">
+            </div>
+        </div>
+
+        <!-- Left Panel -->
+        <div class="panel panel-left" id="panelLeft">
+            <h2>🌌 Görev Panosu</h2>
+            <div class="mission-card" id="missionCard">
+                <div class="planet-name" id="planetName">🪐 Enerji Deposu</div>
+                <div style="margin-top:6px; font-size: 0.9rem;">Hedef Güç: <span class="energy-need" id="energyNeed">3/4</span></div>
+                <div class="desc" id="missionDesc">Farklı enerji kristallerini birleştirerek depoyu doldurun.</div>
+            </div>
+            
+            <div class="prediction-box">
+                <h3>🎯 Enerji Tahmini</h3>
+                <p style="font-size:0.75rem;color:var(--text-secondary); margin-bottom: 4px;">Depodaki toplam enerjiyi kesir olarak tahmin edin:</p>
+                <div class="fraction-input-container">
+                    <input type="number" id="predNum" placeholder="Pay" min="0" step="1">
+                    <div class="fraction-bar"></div>
+                    <input type="number" id="predDen" placeholder="Payda" min="1" step="1">
+                </div>
+                <button class="btn btn-warning btn-small" onclick="submitPrediction()" style="width: 100%;">Tahmin Gönder</button>
+                <span id="predictionResult" style="font-size:0.75rem;display:block;margin-top:6px; font-weight: bold;"></span>
+            </div>
+            
+            <button class="btn btn-primary" onclick="resetTank()" style="width:100%;">🔄 Depoyu Sıfırla</button>
+            <button class="btn btn-success" onclick="checkSolution()" style="width:100%;">✅ Enerjiyi Aktar</button>
+        </div>
+
+        <!-- Center Panel -->
+        <div class="panel panel-center" id="panelCenter">
+            <!-- Drop / Interaction Zone -->
+            <div class="energy-tank-zone" id="energyTank" ondragover="allowDrop(event)" ondrop="handleDrop(event)">
+                <span class="tank-label">⚡ KOZMİK REAKTÖR</span>
+                <span class="tank-target" id="tankTargetDisplay">Hedef: 3/4</span>
+                <span style="color:var(--text-secondary);font-size:0.9rem; text-align: center; pointer-events: none;" id="tankPlaceholder">
+                    🔽 Kristalleri buraya sürükleyin veya tıklayarak ekleyin
+                </span>
+                <span class="tank-fill-indicator" id="tankFillIndicator">Mevcut Enerji: 0</span>
+            </div>
+            
+            <div style="width:100%;">
+                <h3 style="text-align: center; margin-bottom: 6px; font-size: 0.8rem;">💎 SAKLAMA HAZNESİ</h3>
+                <div class="crystal-shelf" id="crystalShelf">
+                    <!-- Crystals generated here dynamically -->
+                </div>
+            </div>
+            
+            <div style="margin-top:4px; margin-bottom: 4px; display:flex; gap:8px; flex-wrap:wrap; justify-content:center; width: 100%;">
+                <button class="btn btn-small btn-primary" onclick="convertCrystals('fraction')" title="Kesire çevir">📐 Kesir Görünümü</button>
+                <button class="btn btn-small btn-primary" onclick="convertCrystals('decimal')" title="Ondalığa çevir">🔢 Ondalık Görünümü</button>
+                <button class="btn btn-small btn-primary" onclick="convertCrystals('percent')" title="Yüzdeye çevir">💯 Yüzde Görünümü</button>
+            </div>
+        </div>
+
+        <!-- Right Panel -->
+        <div class="panel panel-right" id="panelRight">
+            <h2>🛠️ Kuantum Analizör</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div class="tool-card" id="toolBarModel" onclick="toggleTool('barModel')">
+                    <span class="tool-icon">📊</span> Çubuk Model
+                </div>
+                <div class="tool-card" id="toolCircleModel" onclick="toggleTool('circleModel')">
+                    <span class="tool-icon">⭕</span> Daire Model
+                </div>
+                <div class="tool-card" id="toolTable" onclick="toggleTool('table')">
+                    <span class="tool-icon">📋</span> Eşdeğerlik
+                </div>
+                <div class="tool-card" id="toolWorkBoard" onclick="toggleTool('workBoard')">
+                    <span class="tool-icon">📝</span> Kuantum Matematik
+                </div>
+            </div>
+            <div id="toolDisplay" style="margin-top:4px; font-size:0.8rem; color:var(--text-secondary); text-align:center; font-weight: bold; color: var(--turquoise);">
+                Lütfen analiz yöntemini seçin
+            </div>
+            <div id="visualModelArea" style="flex-grow: 1; min-height:160px; background:rgba(0,0,0,0.4); border-radius:12px; border: 1px solid rgba(123, 47, 247, 0.2); padding:12px; display:flex; flex-direction: column; align-items:center; justify-content:center; gap:8px;">
+                <p style="color: var(--text-secondary); text-align: center; font-size: 0.8rem;">Seçilen kuantum analiz aracı burada görselleştirilecektir.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal container -->
+    <div id="modalContainer"></div>
+
+    <script>
+        (function() {
+            // ============ STARFIELD ============
+            const starfield = document.getElementById('starfield');
+            if(starfield) {
+                for (let i = 0; i < 80; i++) {
+                    const star = document.createElement('div');
+                    star.className = 'star';
+                    star.style.left = Math.random() * 100 + '%';
+                    star.style.top = Math.random() * 100 + '%';
+                    const size = Math.random() * 3 + 1;
+                    star.style.width = size + 'px';
+                    star.style.height = size + 'px';
+                    star.style.setProperty('--dur', (Math.random() * 3 + 2) + 's');
+                    star.style.setProperty('--delay', (Math.random() * 5) + 's');
+                    starfield.appendChild(star);
+                }
+            }
+
+            // ============ GAME STATE ============
+            const state = {
+                currentMission: 1,
+                totalStars: 0,
+                collectedCrystals: 0,
+                tankContents: [],
+                activeCrystals: [], // Holds deep copies of current mission crystals
+                predictionNum: null,
+                predictionDen: null,
+                activeTool: 'barModel', // Default tool
+                displayType: 'fraction', // 'fraction', 'decimal', 'percent'
+            };
+
+            // ============ MISSION DEFINITIONS ============
+            const missions = {
+                1: {
+                    name: 'Enerji Deposu',
+                    planet: '🪐 Kristal Gezegeni',
+                    desc: 'Farklı enerji kristallerini birleştirerek kozmik reaktörü tam 3/4 seviyesine getirin.',
+                    hint: '1/4 + 2/4 = 3/4',
+                    targetValue: 0.75,
+                    targetDisplay: '3/4',
+                    targetFraction: { num: 3, den: 4 },
+                    availableCrystals: [
+                        { type: 'fraction', value: 0.25, display: '1/4', icon: '💠' },
+                        { type: 'fraction', value: 0.5, display: '2/4', icon: '💎' },
+                        { type: 'fraction', value: 0.25, display: '1/4', icon: '💠' },
+                        { type: 'fraction', value: 0.75, display: '3/4', icon: '🔮' },
+                        { type: 'fraction', value: 0.5, display: '1/2', icon: '💎' },
+                        { type: 'decimal', value: 0.25, display: '0.25', icon: '🔷' },
+                    ]
+                },
+                2: {
+                    name: 'Koloni Besleme',
+                    planet: '🌍 Tarım Kolonisi',
+                    desc: 'Kalkanları devreye sokmak için reaktöre tam 1 tam (1.00) enerji ulaştırın.',
+                    hint: '2/5 + 3/5 = 1',
+                    targetValue: 1.0,
+                    targetDisplay: '1 (Tam)',
+                    targetFraction: { num: 1, den: 1 },
+                    availableCrystals: [
+                        { type: 'fraction', value: 0.4, display: '2/5', icon: '💠' },
+                        { type: 'fraction', value: 0.6, display: '3/5', icon: '💎' },
+                        { type: 'fraction', value: 0.2, display: '1/5', icon: '💠' },
+                        { type: 'fraction', value: 0.2, display: '1/5', icon: '💠' },
+                        { type: 'decimal', value: 0.4, display: '0.4', icon: '🔷' },
+                        { type: 'percent', value: 0.6, display: '%60', icon: '🟢' },
+                    ]
+                },
+                3: {
+                    name: 'Kristal Çoğaltıcı',
+                    planet: '🏭 Kristal Fabrikası',
+                    desc: 'Her biri 3/8 güçte olan 4 farklı kristalden faydalanın. Hedef gücü 1.5 birime ayarlayın.',
+                    hint: '4 × 3/8 = 12/8 = 1.5',
+                    targetValue: 1.5,
+                    targetDisplay: '1.5 (12/8)',
+                    targetFraction: { num: 3, den: 2 },
+                    availableCrystals: [
+                        { type: 'fraction', value: 0.375, display: '3/8', icon: '💠' },
+                        { type: 'fraction', value: 0.375, display: '3/8', icon: '💠' },
+                        { type: 'fraction', value: 0.375, display: '3/8', icon: '💠' },
+                        { type: 'fraction', value: 0.375, display: '3/8', icon: '💠' },
+                        { type: 'decimal', value: 0.75, display: '0.75', icon: '🔷' },
+                        { type: 'fraction', value: 0.75, display: '6/8', icon: '💎' },
+                    ]
+                },
+                4: {
+                    name: 'Enerji Paylaştırıcı',
+                    planet: '🛰️ Uydu İstasyonu',
+                    desc: '3/5 miktarındaki ana enerjiyi 3 eşit uydunun her birine bölüştürün. Depoyu tek bir uydunun payı kadar (0.2) doldurun.',
+                    hint: '(3/5) / 3 = 1/5 = 0.2',
+                    targetValue: 0.2,
+                    targetDisplay: '1/5 (0.2)',
+                    targetFraction: { num: 1, den: 5 },
+                    availableCrystals: [
+                        { type: 'fraction', value: 0.6, display: '3/5', icon: '🔮' },
+                        { type: 'fraction', value: 0.2, display: '1/5', icon: '💠' },
+                        { type: 'fraction', value: 0.2, display: '1/5', icon: '💠' },
+                        { type: 'decimal', value: 0.2, display: '0.2', icon: '🔷' },
+                        { type: 'percent', value: 0.2, display: '%20', icon: '🟢' },
+                    ]
+                },
+                5: {
+                    name: 'Kritik Denge',
+                    planet: '🚀 Savaş Gemisi',
+                    desc: 'Kritik sistemleri onarmak için tam 0.36 birim enerji sentezleyin. Doğru kristalleri seçin.',
+                    hint: '9/25 = 0.36',
+                    targetValue: 0.36,
+                    targetDisplay: '0.36 (9/25)',
+                    targetFraction: { num: 9, den: 25 },
+                    availableCrystals: [
+                        { type: 'decimal', value: 0.35, display: '0.35', icon: '🔷' },
+                        { type: 'fraction', value: 0.35, display: '35/100', icon: '💠' },
+                        { type: 'percent', value: 35, display: '%35', icon: '🟢' },
+                        { type: 'decimal', value: 0.36, display: '0.36', icon: '🔶' },
+                        { type: 'fraction', value: 0.36, display: '9/25', icon: '💎' },
+                        { type: 'percent', value: 36, display: '%36', icon: '🟢' }
+                    ]
+                },
+                6: {
+                    name: 'Sonsuz Galaksi (Boss)',
+                    planet: '🌌 Galaksi Merkezi',
+                    desc: 'Kozmik geçidi açmak için reaktörü tam 2.5 birim güçle yüklemeniz gerekiyor!',
+                    hint: '1 + 1 + 0.5 = 2.5',
+                    targetValue: 2.5,
+                    targetDisplay: '2.5 (5/2)',
+                    targetFraction: { num: 5, den: 2 },
+                    availableCrystals: [
+                        { type: 'fraction', value: 0.5, display: '1/2', icon: '💎' },
+                        { type: 'fraction', value: 0.75, display: '3/4', icon: '🔮' },
+                        { type: 'decimal', value: 0.5, display: '0.5', icon: '🔷' },
+                        { type: 'percent', value: 50, display: '%50', icon: '🟢' },
+                        { type: 'fraction', value: 0.25, display: '1/4', icon: '💠' },
+                        { type: 'decimal', value: 0.75, display: '0.75', icon: '🔶' },
+                        { type: 'fraction', value: 1.0, display: '1', icon: '💎' },
+                        { type: 'percent', value: 100, display: '%100', icon: '🟢' }
+                    ]
+                }
+            };
+
+            // Initialize game on load
+            window.onload = function() {
+                loadMission(1);
+                toggleTool('barModel');
+            };
+
+            // ============ MISSION LIFECYCLE ============
+            function loadMission(missionId) {
+                state.currentMission = missionId;
+                const mission = missions[missionId];
+                
+                // Set UI texts
+                document.getElementById('planetName').innerText = mission.planet;
+                document.getElementById('energyNeed').innerText = mission.targetDisplay;
+                document.getElementById('missionDesc').innerText = mission.desc;
+                document.getElementById('tankTargetDisplay').innerText = "Hedef: " + mission.targetDisplay;
+                
+                // Set progress info
+                document.getElementById('progressText').innerText = `Görev ${missionId}/6`;
+                document.getElementById('progressBar').style.width = ((missionId - 1) / 6 * 100) + '%';
+
+                // Reset Tank and Predictions
+                state.tankContents = [];
+                state.predictionNum = null;
+                state.predictionDen = null;
+                document.getElementById('predNum').value = '';
+                document.getElementById('predDen').value = '';
+                document.getElementById('predictionResult').innerText = '';
+                document.getElementById('predictionResult').style.color = 'var(--text-secondary)';
+
+                // Deep copy the crystal objects to track unique IDs
+                state.activeCrystals = mission.availableCrystals.map((crystal, index) => ({
+                    ...crystal,
+                    id: 'crystal_' + index,
+                    originalDisplay: crystal.display
+                }));
+
+                state.displayType = 'fraction'; // default display back to fraction
+                updateCrystalsRepresentation();
+                updateTankUI();
+                renderCrystals();
+                updateVisualTools();
+            }
+
+            // ============ RENDER SYSTEM ============
+            function renderCrystals() {
+                const shelf = document.getElementById('crystalShelf');
+                shelf.innerHTML = '';
+                
+                state.activeCrystals.forEach(crystal => {
+                    // Check if crystal is already in tank
+                    const isInTank = state.tankContents.some(item => item.id === crystal.id);
+                    if (!isInTank) {
+                        const crystalEl = createCrystalElement(crystal, false);
+                        shelf.appendChild(crystalEl);
+                    }
+                });
+
+                if (shelf.children.length === 0) {
+                    shelf.innerHTML = '<span style="color:var(--text-secondary); font-size:0.8rem;">Saklama haznesi boş.</span>';
+                }
+            }
+
+            function createCrystalElement(crystal, isInTank = false) {
+                const el = document.createElement('div');
+                el.className = `crystal ${crystal.type}`;
+                el.draggable = !isInTank;
+                el.id = crystal.id;
+
+                // For Mobile / Click-to-Interact
+                el.addEventListener('click', () => {
+                    if (isInTank) {
+                        removeCrystalFromTank(crystal.id);
+                    } else {
+                        addCrystalToTank(crystal);
+                    }
+                });
+
+                // Desktop Drag Event Listeners
+                el.addEventListener('dragstart', (e) => {
+                    if(!isInTank) {
+                        el.classList.add('dragging');
+                        e.dataTransfer.setData('text/plain', crystal.id);
+                    }
+                });
+
+                // Value conversion label
+                let displayVal = crystal.display;
+                
+                el.innerHTML = `
+                    <span class="crystal-icon">${crystal.icon}</span>
+                    <span class="crystal-value">${displayVal}</span>
+                `;
+
+                if (isInTank) {
+                    el.classList.add('in-tank');
+                }
+
+                return el;
+            }
+
+            // ============ DRAG AND DROP HANDLERS ============
+            window.allowDrop = function(ev) {
+                ev.preventDefault();
+                const tank = document.getElementById('energyTank');
+                tank.classList.add('highlight');
+            };
+
+            // Remove highlight when drag leaves
+            document.getElementById('energyTank').addEventListener('dragleave', () => {
+                document.getElementById('energyTank').classList.remove('highlight');
+            });
+
+            window.handleDrop = function(ev) {
+                ev.preventDefault();
+                const tank = document.getElementById('energyTank');
+                tank.classList.remove('highlight');
+                
+                const id = ev.dataTransfer.getData('text/plain');
+                const crystal = state.activeCrystals.find(c => c.id === id);
+                if (crystal) {
+                    addCrystalToTank(crystal);
+                }
+            };
+
+            // ============ STATE MODIFIERS ============
+            function addCrystalToTank(crystal) {
+                // Ensure we don't duplicate
+                if (!state.tankContents.some(item => item.id === crystal.id)) {
+                    state.tankContents.push(crystal);
+                    createFloatingText('+' + crystal.display, 'var(--success)');
+                    updateTankUI();
+                    renderCrystals();
+                    updateVisualTools();
+                }
+            }
+
+            function removeCrystalFromTank(id) {
+                const crystalIndex = state.tankContents.findIndex(item => item.id === id);
+                if (crystalIndex > -1) {
+                    const removed = state.tankContents.splice(crystalIndex, 1)[0];
+                    createFloatingText('-' + removed.display, 'var(--danger)');
+                    updateTankUI();
+                    renderCrystals();
+                    updateVisualTools();
+                }
+            }
+
+            window.resetTank = function() {
+                state.tankContents = [];
+                updateTankUI();
+                renderCrystals();
+                updateVisualTools();
+                createFloatingText('Temizlendi!', 'var(--warning)');
+            };
+
+            // ============ CONVERSION SYSTEM ============
+            window.convertCrystals = function(type) {
+                state.displayType = type;
+                updateCrystalsRepresentation();
+                renderCrystals();
+                updateTankUI();
+                updateVisualTools();
+                createFloatingText(type.toUpperCase() + ' Görünümü', 'var(--turquoise-glow)');
+            };
+
+            function updateCrystalsRepresentation() {
+                state.activeCrystals.forEach(crystal => {
+                    // Normalize standard displays
+                    let val = crystal.value;
+                    if (state.displayType === 'fraction') {
+                        crystal.display = getFractionString(val);
+                        crystal.type = 'fraction';
+                    } else if (state.displayType === 'decimal') {
+                        crystal.display = val.toFixed(2).replace(/\.?0+$/, "");
+                        crystal.type = 'decimal';
+                    } else if (state.displayType === 'percent') {
+                        crystal.display = '%' + Math.round(val * 100);
+                        crystal.type = 'percent';
+                    }
+                });
+
+                // Also update representations of tank items
+                state.tankContents.forEach(item => {
+                    const matched = state.activeCrystals.find(c => c.id === item.id);
+                    if (matched) {
+                        item.display = matched.display;
+                        item.type = matched.type;
+                    }
+                });
+            }
+
+            // Helper to get beautiful fraction string representation
+            function getFractionString(val) {
+                if (val === 0.25) return '1/4';
+                if (val === 0.5) return '1/2';
+                if (val === 0.75) return '3/4';
+                if (val === 0.2) return '1/5';
+                if (val === 0.4) return '2/5';
+                if (val === 0.6) return '3/5';
+                if (val === 0.8) return '4/5';
+                if (val === 0.375) return '3/8';
+                if (val === 0.125) return '1/8';
+                if (val === 0.35) return '7/20';
+                if (val === 0.36) return '9/25';
+                if (val === 1.0) return '1';
+                // General algorithm for decimals to simple fraction
+                let len = val.toString().split('.')[1]?.length || 0;
+                if(len > 0) {
+                    let denominator = Math.pow(10, len);
+                    let numerator = Math.round(val * denominator);
+                    let divisor = gcd(numerator, denominator);
+                    return (numerator / divisor) + '/' + (denominator / divisor);
+                }
+                return val.toString();
+            }
+
+            function gcd(a, b) {
+                return b ? gcd(b, a % b) : a;
+            }
+
+            // ============ HUD & TANK UI UPDATES ============
+            function updateTankUI() {
+                const tank = document.getElementById('energyTank');
+                const placeholder = document.getElementById('tankPlaceholder');
+                const fillIndicator = document.getElementById('tankFillIndicator');
+                
+                // Clear old crystals in tank UI
+                const oldCrystals = tank.querySelectorAll('.crystal.in-tank');
+                oldCrystals.forEach(el => el.remove());
+
+                // Calculate total energy
+                const totalEnergy = state.tankContents.reduce((sum, item) => sum + item.value, 0);
+                state.energyLevel = totalEnergy;
+
+                // Show/hide placeholder
+                if (state.tankContents.length > 0) {
+                    placeholder.style.display = 'none';
+                    // Re-add crystal elements into the tank zone
+                    state.tankContents.forEach(item => {
+                        const crystalEl = createCrystalElement(item, true);
+                        tank.appendChild(crystalEl);
+                    });
+                } else {
+                    placeholder.style.display = 'block';
+                }
+
+                // Update fill text indicator based on choice
+                let fillText = '';
+                if (state.displayType === 'fraction') {
+                    fillText = getFractionString(totalEnergy);
+                } else if (state.displayType === 'decimal') {
+                    fillText = totalEnergy.toFixed(3).replace(/\.?0+$/, "");
+                } else if (state.displayType === 'percent') {
+                    fillText = '%' + Math.round(totalEnergy * 100);
+                }
+
+                fillIndicator.innerText = `Mevcut Enerji: ${fillText}`;
+
+                // Update general stats
+                document.getElementById('statEnergy').innerText = Math.round(totalEnergy * 100) + '%';
+                document.getElementById('statStars').innerText = state.totalStars;
+                document.getElementById('statCrystals').innerText = state.collectedCrystals + '/50';
+            }
+
+            // ============ PREDICTION SYSTEM ============
+            window.submitPrediction = function() {
+                const numVal = parseInt(document.getElementById('predNum').value);
+                const denVal = parseInt(document.getElementById('predDen').value);
+                const predResult = document.getElementById('predictionResult');
+
+                if (isNaN(numVal) || isNaN(denVal) || denVal <= 0) {
+                    predResult.innerText = "Lütfen geçerli pay ve payda girin!";
+                    predResult.style.color = 'var(--danger)';
+                    return;
+                }
+
+                state.predictionNum = numVal;
+                state.predictionDen = denVal;
+                
+                const predValue = numVal / denVal;
+                const actualValue = state.energyLevel;
+
+                // Standard allowance for floating points
+                if (Math.abs(predValue - actualValue) < 0.005) {
+                    predResult.innerText = "🎯 Doğru Tahmin! +10 Ekstra Puan!";
+                    predResult.style.color = 'var(--green-bright)';
+                    state.totalStars += 10;
+                    document.getElementById('statStars').innerText = state.totalStars;
+                    createFloatingText('+10', 'var(--gold)');
+                } else {
+                    predResult.innerText = `❌ Yakın değil! Senin Tahminin: ${(predValue).toFixed(2)}, Gerçek: ${(actualValue).toFixed(2)}`;
+                    predResult.style.color = 'var(--danger)';
+                }
+            }
+
+            // ============ VALIDATION & WIN TRIGGER ============
+            window.checkSolution = function() {
+                const mission = missions[state.currentMission];
+                const actualValue = state.energyLevel;
+                const targetValue = mission.targetValue;
+                const tank = document.getElementById('energyTank');
+
+                // Floating point error safety
+                if (Math.abs(actualValue - targetValue) < 0.001) {
+                    // Success!
+                    tank.className = "energy-tank-zone success";
+                    setTimeout(() => {
+                        tank.className = "energy-tank-zone";
+                    }, 2400);
+
+                    // Award points
+                    const earnedCrystals = state.tankContents.length;
+                    state.collectedCrystals += earnedCrystals;
+                    state.totalStars += 50;
+                    
+                    showSuccessModal(earnedCrystals);
+                } else {
+                    // Error!
+                    tank.className = "energy-tank-zone error";
+                    setTimeout(() => {
+                        tank.className = "energy-tank-zone";
+                    }, 600);
+                    
+                    createFloatingText('Güç Uyuşmazlığı!', 'var(--danger)');
+                }
+            };
+
+            function showSuccessModal(earnedCrystals) {
+                const container = document.getElementById('modalContainer');
+                const isFinalBoss = state.currentMission === 6;
+
+                let modalHTML = `
+                    <div class="modal-overlay">
+                        <div class="modal">
+                            <h2>🏆 GÖREV TAMAMLANDI!</h2>
+                            <p>${missions[state.currentMission].planet} başarıyla şarj edildi.</p>
+                            <span class="badge-earned">💎</span>
+                            <p style="font-size: 1.1rem; color: var(--gold); font-weight: bold;">Kazanılan Ödüller:</p>
+                            <p>⭐ +50 Galaksi Puanı</p>
+                            <p>💎 +${earnedCrystals} Enerji Kristali Envantere Eklendi</p>
+                            <div style="margin-top:20px; display:flex; gap:10px; justify-content:center;">
+                `;
+
+                if (isFinalBoss) {
+                    modalHTML += `
+                        <button class="btn btn-success" onclick="restartGame()">🌌 Sonsuz Galaksiyi Yeniden Başlat</button>
+                    `;
+                } else {
+                    modalHTML += `
+                        <button class="btn btn-success" onclick="nextMission()">🚀 Sonraki Göreve İlerle</button>
+                    `;
+                }
+
+                modalHTML += `
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                container.innerHTML = modalHTML;
+            }
+
+            window.nextMission = function() {
+                document.getElementById('modalContainer').innerHTML = '';
+                if (state.currentMission < 6) {
+                    loadMission(state.currentMission + 1);
+                }
+            };
+
+            window.restartGame = function() {
+                document.getElementById('modalContainer').innerHTML = '';
+                state.totalStars = 0;
+                state.collectedCrystals = 0;
+                loadMission(1);
+            };
+
+            // ============ VISUAL MODEL ANALYZER TOOLS ============
+            window.toggleTool = function(toolName) {
+                // De-activate old tool button UI
+                if(state.activeTool) {
+                    const oldBtn = document.getElementById('tool' + state.activeTool.charAt(0).toUpperCase() + state.activeTool.slice(1));
+                    if(oldBtn) oldBtn.classList.remove('active');
+                }
+
+                state.activeTool = toolName;
+                const newBtn = document.getElementById('tool' + toolName.charAt(0).toUpperCase() + toolName.slice(1));
+                if(newBtn) newBtn.classList.add('active');
+
+                // Update text description
+                const displayDesc = document.getElementById('toolDisplay');
+                switch(toolName) {
+                    case 'barModel':
+                        displayDesc.innerText = 'Çubuk Model: Mevcut / Hedef Oranı';
+                        break;
+                    case 'circleModel':
+                        displayDesc.innerText = 'Daire Model: Dilim Grafik Analizi';
+                        break;
+                    case 'table':
+                        displayDesc.innerText = 'Kuantum Eşdeğerlik Tablosu';
+                        break;
+                    case 'workBoard':
+                        displayDesc.innerText = 'Matematiksel İşlem Geçmişi';
+                        break;
+                }
+
+                updateVisualTools();
+            };
+
+            function updateVisualTools() {
+                const modelArea = document.getElementById('visualModelArea');
+                if(!modelArea) return;
+
+                modelArea.innerHTML = '';
+                const totalEnergy = state.energyLevel;
+                const targetValue = missions[state.currentMission].targetValue;
+
+                if (toolIsNullState()) {
+                    modelArea.innerHTML = '<p style="color: var(--text-secondary); text-align:center; font-size:0.8rem;">Modelleri görmek için reaktöre en az bir kristal yerleştirin.</p>';
+                    return;
+                }
+
+                if (state.activeTool === 'barModel') {
+                    // Create an interactive bar representation
+                    const barContainer = document.createElement('div');
+                    barContainer.style.width = '100%';
+                    barContainer.style.display = 'flex';
+                    barContainer.style.flexDirection = 'column';
+                    barContainer.style.gap = '8px';
+
+                    // Target indicator bar
+                    const barTargetWrap = document.createElement('div');
+                    barTargetWrap.style.background = 'rgba(255,255,255,0.05)';
+                    barTargetWrap.style.borderRadius = '6px';
+                    barTargetWrap.style.height = '34px';
+                    barTargetWrap.style.border = '1px dashed var(--warning)';
+                    barTargetWrap.style.position = 'relative';
+                    barTargetWrap.style.overflow = 'hidden';
+
+                    // Safe cap at 100% representation scale
+                    const targetPercentage = Math.min((targetValue / Math.max(targetValue, totalEnergy)) * 100, 100);
+                    const fillPercentage = Math.min((totalEnergy / Math.max(targetValue, totalEnergy)) * 100, 100);
+
+                    const targetFill = document.createElement('div');
+                    targetFill.style.width = targetPercentage + '%';
+                    targetFill.style.height = '100%';
+                    targetFill.style.background = 'rgba(255, 165, 2, 0.2)';
+                    targetFill.style.display = 'flex';
+                    targetFill.style.alignItems = 'center';
+                    targetFill.style.paddingLeft = '8px';
+                    targetFill.style.fontSize = '0.75rem';
+                    targetFill.style.color = 'var(--warning)';
+                    targetFill.style.fontWeight = 'bold';
+                    targetFill.innerText = `HEDEF ÇUBUĞU (${getFractionString(targetValue)})`;
+
+                    barTargetWrap.appendChild(targetFill);
+
+                    // Current fill bar (segmented by added crystals)
+                    const barCurrentWrap = document.createElement('div');
+                    barCurrentWrap.style.background = 'rgba(255,255,255,0.05)';
+                    barCurrentWrap.style.borderRadius = '6px';
+                    barCurrentWrap.style.height = '34px';
+                    barCurrentWrap.style.border = '1px solid var(--purple)';
+                    barCurrentWrap.style.position = 'relative';
+                    barCurrentWrap.style.overflow = 'hidden';
+                    barCurrentWrap.style.display = 'flex';
+
+                    state.tankContents.forEach((crystal) => {
+                        const segmentWidth = (crystal.value / Math.max(targetValue, totalEnergy)) * 100;
+                        const segment = document.createElement('div');
+                        segment.style.width = segmentWidth + '%';
+                        segment.style.height = '100%';
+                        segment.style.background = getCrystalGradient(crystal.type);
+                        segment.style.borderRight = '1px solid rgba(255,255,255,0.2)';
+                        segment.style.display = 'flex';
+                        segment.style.alignItems = 'center';
+                        segment.style.justifyContent = 'center';
+                        segment.style.fontSize = '0.7rem';
+                        segment.style.fontWeight = 'bold';
+                        segment.innerText = crystal.display;
+                        
+                        barCurrentWrap.appendChild(segment);
+                    });
+
+                    barContainer.appendChild(barTargetWrap);
+                    barContainer.appendChild(barCurrentWrap);
+                    modelArea.appendChild(barContainer);
+
+                } else if (state.activeTool === 'circleModel') {
+                    // Create beautiful circular segmented pie using SVG
+                    const svgNS = "http://www.w3.org/2000/svg";
+                    const svg = document.createElementNS(svgNS, "svg");
+                    svg.setAttribute("width", "130");
+                    svg.setAttribute("height", "130");
+                    svg.setAttribute("viewBox", "0 0 100 100");
+                    
+                    // Background Circle representing full target
+                    const baseCircle = document.createElementNS(svgNS, "circle");
+                    baseCircle.setAttribute("cx", "50");
+                    baseCircle.setAttribute("cy", "50");
+                    baseCircle.setAttribute("r", "40");
+                    baseCircle.setAttribute("fill", "rgba(255,255,255,0.05)");
+                    baseCircle.setAttribute("stroke", "var(--purple)");
+                    baseCircle.setAttribute("stroke-width", "2");
+                    svg.appendChild(baseCircle);
+
+                    // Draw slices for each crystal in reaktor
+                    let accumulatedAngle = 0;
+                    const maxScale = Math.max(targetValue, totalEnergy, 1.0);
+
+                    state.tankContents.forEach((crystal) => {
+                        const sliceAngle = (crystal.value / maxScale) * 360;
+                        const path = document.createElementNS(svgNS, "path");
+                        
+                        const x1 = 50 + 40 * Math.cos((accumulatedAngle - 90) * Math.PI / 180);
+                        const y1 = 50 + 40 * Math.sin((accumulatedAngle - 90) * Math.PI / 180);
+                        
+                        accumulatedAngle += sliceAngle;
+                        
+                        const x2 = 50 + 40 * Math.cos((accumulatedAngle - 90) * Math.PI / 180);
+                        const y2 = 50 + 40 * Math.sin((accumulatedAngle - 90) * Math.PI / 180);
+                        
+                        const largeArcFlag = sliceAngle > 180 ? 1 : 0;
+                        
+                        const d = `M 50 50 L ${x1} ${y1} A 40 40 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
+                        path.setAttribute("d", d);
+                        path.setAttribute("fill", getCrystalColorHex(crystal.type));
+                        path.setAttribute("stroke", "rgba(255,255,255,0.3)");
+                        path.setAttribute("stroke-width", "1");
+                        
+                        svg.appendChild(path);
+                    });
+
+                    // Target outline ring
+                    const targetRing = document.createElementNS(svgNS, "circle");
+                    targetRing.setAttribute("cx", "50");
+                    targetRing.setAttribute("cy", "50");
+                    targetRing.setAttribute("r", "42");
+                    targetRing.setAttribute("fill", "none");
+                    targetRing.setAttribute("stroke", "var(--warning)");
+                    targetRing.setAttribute("stroke-dasharray", "4,2");
+                    targetRing.setAttribute("stroke-width", "1.5");
+                    svg.appendChild(targetRing);
+
+                    modelArea.appendChild(svg);
+
+                    const labelInfo = document.createElement('div');
+                    labelInfo.style.fontSize = '0.75rem';
+                    labelInfo.style.color = 'var(--text-secondary)';
+                    labelInfo.innerHTML = `Ölçeklenen Daire Modeli (Maks: ${maxScale})`;
+                    modelArea.appendChild(labelInfo);
+
+                } else if (state.activeTool === 'table') {
+                    // Equivalent table
+                    const table = document.createElement('table');
+                    table.style.width = '100%';
+                    table.style.fontSize = '0.75rem';
+                    table.style.borderCollapse = 'collapse';
+                    table.style.textAlign = 'center';
+                    
+                    table.innerHTML = `
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--purple); color: var(--turquoise);">
+                                <th style="padding: 4px;">Kozmik Tip</th>
+                                <th style="padding: 4px;">Kesir</th>
+                                <th style="padding: 4px;">Ondalık</th>
+                                <th style="padding: 4px;">Yüzde</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    `;
+
+                    const tbody = table.querySelector('tbody');
+                    state.tankContents.forEach((crystal) => {
+                        const row = document.createElement('tr');
+                        row.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+                        row.innerHTML = `
+                            <td style="padding: 6px;">${crystal.icon} Tip</td>
+                            <td style="color: #ffb3cc;">${getFractionString(crystal.value)}</td>
+                            <td style="color: #a0d4ff;">${crystal.value.toFixed(2)}</td>
+                            <td style="color: #9fff8c;">%${Math.round(crystal.value * 100)}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+
+                    modelArea.appendChild(table);
+
+                } else if (state.activeTool === 'workBoard') {
+                    // Mathematic formulation Board
+                    const board = document.createElement('div');
+                    board.style.width = '100%';
+                    board.style.fontSize = '0.8rem';
+                    board.style.color = 'var(--text-primary)';
+                    board.style.fontFamily = 'monospace';
+                    board.style.display = 'flex';
+                    board.style.flexDirection = 'column';
+                    board.style.gap = '6px';
+
+                    const title = document.createElement('div');
+                    title.style.color = 'var(--turquoise)';
+                    title.style.fontWeight = 'bold';
+                    title.innerText = 'KUANTUM DEKODER:';
+                    board.appendChild(title);
+
+                    // Build summation string
+                    let expression = state.tankContents.map(c => getFractionString(c.value)).join(' + ');
+                    let decimalExpression = state.tankContents.map(c => c.value).join(' + ');
+                    
+                    const p1 = document.createElement('p');
+                    p1.innerHTML = `⚛️ <span style="color:var(--crystal-fraction);">Kesir Toplamı:</span><br>${expression} = <span style="color:var(--gold); font-weight:bold;">${getFractionString(totalEnergy)}</span>`;
+                    board.appendChild(p1);
+
+                    const p2 = document.createElement('p');
+                    p2.innerHTML = `🔢 <span style="color:var(--crystal-decimal);">Ondalık Toplamı:</span><br>${decimalExpression} = <span style="color:var(--gold); font-weight:bold;">${totalEnergy.toFixed(3).replace(/\.?0+$/, "")}</span>`;
+                    board.appendChild(p2);
+
+                    const p3 = document.createElement('p');
+                    p3.innerHTML = `🎯 Hedef Güç Değeri: <span style="color:var(--warning);">${getFractionString(targetValue)}</span> (${targetValue})`;
+                    board.appendChild(p3);
+
+                    modelArea.appendChild(board);
+                }
+            }
+
+            function toolIsNullState() {
+                return state.tankContents.length === 0;
+            }
+
+            function getCrystalColorHex(type) {
+                if (type === 'fraction') return '#7b2ff7';
+                if (type === 'decimal') return '#00e5c3';
+                return '#39ff14';
+            }
+
+            // ============ VISUAL EFFECTS ============
+            function createFloatingText(text, color) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.innerText = text;
+                particle.style.color = color;
+                
+                // Spawn randomly around the reaktor area
+                const reaktor = document.getElementById('energyTank');
+                const rect = reaktor.getBoundingClientRect();
+                const x = rect.left + (rect.width / 2) + (Math.random() * 80 - 40);
+                const y = rect.top + (rect.height / 2) + (Math.random() * 40 - 20);
+                
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+                
+                document.body.appendChild(particle);
+
+                setTimeout(() => {
+                    particle.remove();
+                }, 1200);
+            }
+
+            function getCrystalGradient(type) {
+                if (type === 'fraction') return 'linear-gradient(135deg, #2a1040, #4a1a60)';
+                if (type === 'decimal') return 'linear-gradient(135deg, #0a2040, #1a3a60)';
+                return 'linear-gradient(135deg, #0a3010, #1a4a20)';
+            }
+
+        })();
+    </script>
+</body>
+</html>
